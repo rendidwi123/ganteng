@@ -12,5 +12,10 @@ public enum class Difficulty(
 ) {
     EASY(defaultRequiredSuccesses = 1, usesLevelGate = false),
     NORMAL(defaultRequiredSuccesses = 1, usesLevelGate = true),
-    HARD(defaultRequiredSuccesses = 3, usesLevelGate = false),
+    HARD(defaultRequiredSuccesses = 3, usesLevelGate = false);
+
+    public companion object {
+        /** For reading stored data: null for an unknown name instead of an exception. */
+        public fun fromNameOrNull(name: String?): Difficulty? = entries.firstOrNull { it.name == name }
+    }
 }

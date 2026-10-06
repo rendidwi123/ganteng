@@ -48,4 +48,19 @@ class AngryModePolicyTest {
         assertFailsWith<IllegalArgumentException> { AngryModePolicy(messages = listOf("a", " ")) }
         assertFailsWith<IllegalArgumentException> { p.stateFor(-1) }
     }
+
+    @Test fun `failures per level slows escalation`() {
+        val slow = AngryModePolicy(failuresPerLevel = 2)
+        val levels = (0..10).map { slow.stateFor(it).level }
+        assertEquals(listOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4), levels)
+        assertFailsWith<IllegalArgumentException> { AngryModePolicy(failuresPerLevel = 0) }
+    }
+
+    @Test fun `isMax only at the top level`() {
+        assertEquals(listOf(false, false, false, false, true), (0..4).map { p.stateFor(it).isMax })
+    }
+
+    @Test fun `same input always gives the same state`() {
+        for (n in 0..20) assertEquals(p.stateFor(n), AngryModePolicy().stateFor(n))
+    }
 }

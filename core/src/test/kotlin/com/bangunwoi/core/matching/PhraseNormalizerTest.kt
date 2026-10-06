@@ -21,4 +21,24 @@ class PhraseNormalizerTest {
     }
     @Test fun `custom synonyms`() =
         assertEquals("x", PhraseNormalizer(mapOf("Y" to "x")).normalize("y"))
+
+    @Test fun `digits are kept and emoji or symbols are dropped`() {
+        assertEquals(listOf("5", "menit", "lagi"), n.tokens("5 menit lagi"))
+        assertEquals(listOf("gue", "sudah", "bangun"), n.tokens("gw 😀 udah ⏰ bangun"))
+    }
+
+    @Test fun `control characters and non-latin scripts do not crash`() {
+        assertEquals(listOf("gue"), n.tokens("\u0000gw\u0007"))
+        assertTrue(n.tokens("😀😀😀").isEmpty())
+        n.tokens("起きた") // letters in other scripts are kept as tokens, never an exception
+    }
+
+    @Test fun `normalization is idempotent`() {
+        for (t in listOf("GW UDAH BANGUN!", "gueee udahhh", "  a  b  ", "Gué")) {
+            assertEquals(n.normalize(t), n.normalize(n.normalize(t)), t)
+        }
+    }
+
+    @Test fun `empty synonym table leaves words alone`() =
+        assertEquals("gw udah", PhraseNormalizer(emptyMap()).normalize("GW UDAH"))
 }

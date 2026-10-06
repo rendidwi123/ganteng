@@ -125,6 +125,20 @@ class WakePhraseChallengeTest {
         assertIs<ChallengeResult.Completed>(c.processInput(input))
     }
 
+    @Test fun `accepted alternative beats a higher scoring rejected one`() {
+        // "...belum" scores 1.0 but is contradicted; "udah bangun" scores 0.8 and is accepted
+        val c = challenge(Difficulty.EASY).also { it.start() }
+        val input = SpeechInput(listOf(SpeechCandidate("gw udah bangun belum"), SpeechCandidate("udah bangun")), true)
+        assertIs<ChallengeResult.Completed>(c.processInput(input))
+    }
+
+    @Test fun `rejected reason carries the best match for feedback`() {
+        val c = challenge(Difficulty.EASY).also { it.start() }
+        val r = assertIs<ChallengeResult.Rejected>(c.processInput(say("gw belum bangun")))
+        assertEquals(RejectReason.NO_MATCH, r.reason)
+        assertTrue(r.match!!.contradicted)
+    }
+
     @Test fun `unknown input type is ignored`() {
         val c = challenge(Difficulty.EASY).also { it.start() }
         assertEquals(ChallengeResult.Ignored, c.processInput(object : ChallengeInput {}))

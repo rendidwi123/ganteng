@@ -1,16 +1,30 @@
 package com.bangunwoi.core.domain
 
-/** The phrase the user must say. [threshold] is the minimum match score in (0, 1]. */
+/**
+ * The phrase the user must say. [threshold] is the minimum match score in (0, 1].
+ * Very short phrases are rejected because a one- or two-letter "phrase" can be hit by recognizer noise.
+ */
 public data class WakePhraseSettings(
     val phrase: String = DEFAULT_PHRASE,
     val threshold: Double = DEFAULT_THRESHOLD,
+    /** Hard word errors tolerated by the matcher; null = automatic (one per 6 words). */
+    val allowedErrors: Int? = null,
 ) {
     init {
+        require(allowedErrors == null || allowedErrors in 0..MAX_ALLOWED_ERRORS) {
+            "allowedErrors must be null or in 0..$MAX_ALLOWED_ERRORS"
+        }
         require(threshold > 0.0 && threshold <= 1.0) { "threshold must be in (0, 1]" }
-        require(phrase.isNotBlank()) { "phrase must not be blank" }
+        require(phrase.length <= MAX_PHRASE_LENGTH) { "phrase must be at most $MAX_PHRASE_LENGTH characters" }
+        require(phrase.count { it.isLetterOrDigit() } >= MIN_PHRASE_LETTERS) {
+            "phrase needs at least $MIN_PHRASE_LETTERS letters or digits"
+        }
     }
 
     public companion object {
+        public const val MIN_PHRASE_LETTERS: Int = 4
+        public const val MAX_PHRASE_LENGTH: Int = 100
+        public const val MAX_ALLOWED_ERRORS: Int = 3
         public const val DEFAULT_PHRASE: String = "GW UDAH BANGUN"
         public const val DEFAULT_THRESHOLD: Double = 0.8
     }
@@ -48,7 +62,14 @@ public data class ChallengeSettings(
 }
 
 /** Built-in sounds; the Android layer maps each id to a raw resource. Custom sounds are a future feature. */
-public enum class BuiltInSound { DEFAULT, AGGRESSIVE, FUNNY }
+public enum class BuiltInSound {
+    DEFAULT, AGGRESSIVE, FUNNY;
+
+    public companion object {
+        /** For reading stored data: null for an unknown name instead of an exception. */
+        public fun fromNameOrNull(name: String?): BuiltInSound? = entries.firstOrNull { it.name == name }
+    }
+}
 
 public data class AlarmSoundSettings(
     val sound: BuiltInSound = BuiltInSound.DEFAULT,

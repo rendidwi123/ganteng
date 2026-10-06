@@ -52,7 +52,8 @@ public class WakePhraseChallenge(
     private fun processSpeech(input: SpeechInput): ChallengeResult {
         val best = input.candidates
             .map { it to matcher.match(it.text) }
-            .maxByOrNull { it.second.score }
+            // an accepted alternative always beats a rejected one, whatever the scores
+            .maxWithOrNull(compareBy({ it.second.accepted }, { it.second.score }))
         if (!input.isFinal) {
             return if (best == null) ChallengeResult.Ignored else ChallengeResult.Preview(best.second)
         }
